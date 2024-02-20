@@ -4,20 +4,12 @@ import (
 	"context"
 )
 
-type RootMod struct {}
+type RootMod struct{}
 
-// example usage: "dagger call container-echo --string-arg yo stdout"
-func (m *RootMod) ContainerEcho(stringArg string) *Container {
-	return dag.Container().From("alpine:latest").WithExec([]string{"echo", stringArg})
+func (m *RootMod) Fn(ctx context.Context) (string, error) {
+	depHi, err := dag.DepAlias().Fn(ctx)
+	if err != nil {
+		return "", err
+	}
+	return "hi from root " + depHi, nil
 }
-
-// example usage: "dagger call grep-dir --directory-arg . --pattern GrepDir"
-func (m *RootMod) GrepDir(ctx context.Context, directoryArg *Directory, pattern string) (string, error) {
-	return dag.Container().
-		From("alpine:latest").
-		WithMountedDirectory("/mnt", directoryArg).
-		WithWorkdir("/mnt").
-		WithExec([]string{"grep", "-R", pattern, "."}).
-		Stdout(ctx)
-}
-

@@ -25,6 +25,9 @@ type ContainerID = dagger.ContainerID
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID = dagger.CurrentModuleID
 
+// The `DepAliasID` scalar type represents an identifier for an object of type DepAlias.
+type DepAliasID = dagger.DepAliasID
+
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID = dagger.DirectoryID
 
@@ -207,6 +210,8 @@ type CurrentModule = dagger.CurrentModule
 
 // CurrentModuleWorkdirOpts contains options for CurrentModule.Workdir
 type CurrentModuleWorkdirOpts = dagger.CurrentModuleWorkdirOpts
+
+type DepAlias = dagger.DepAlias
 
 // A directory.
 type Directory = dagger.Directory

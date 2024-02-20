@@ -114,6 +114,9 @@ type ContainerID string
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID string
 
+// The `DepAliasID` scalar type represents an identifier for an object of type DepAlias.
+type DepAliasID string
+
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID string
 
@@ -1828,6 +1831,75 @@ func (r *CurrentModule) WorkdirFile(path string) *File {
 		Query:  q,
 		Client: r.Client,
 	}
+}
+
+type DepAlias struct {
+	Query  *querybuilder.Selection
+	Client graphql.Client
+
+	fn *string
+	id *DepAliasID
+}
+
+func (r *DepAlias) Fn(ctx context.Context) (string, error) {
+	if r.fn != nil {
+		return *r.fn, nil
+	}
+	q := r.Query.Select("fn")
+
+	var response string
+
+	q = q.Bind(&response)
+	return response, q.Execute(ctx, r.Client)
+}
+
+// A unique identifier for this DepAlias.
+func (r *DepAlias) ID(ctx context.Context) (DepAliasID, error) {
+	if r.id != nil {
+		return *r.id, nil
+	}
+	q := r.Query.Select("id")
+
+	var response DepAliasID
+
+	q = q.Bind(&response)
+	return response, q.Execute(ctx, r.Client)
+}
+
+// XXX_GraphQLType is an internal function. It returns the native GraphQL type name
+func (r *DepAlias) XXX_GraphQLType() string {
+	return "DepAlias"
+}
+
+// XXX_GraphQLIDType is an internal function. It returns the native GraphQL type name for the ID of this object
+func (r *DepAlias) XXX_GraphQLIDType() string {
+	return "DepAliasID"
+}
+
+// XXX_GraphQLID is an internal function. It returns the underlying type ID
+func (r *DepAlias) XXX_GraphQLID(ctx context.Context) (string, error) {
+	id, err := r.ID(ctx)
+	if err != nil {
+		return "", err
+	}
+	return string(id), nil
+}
+
+func (r *DepAlias) MarshalJSON() ([]byte, error) {
+	id, err := r.ID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(id)
+}
+func (r *DepAlias) UnmarshalJSON(bs []byte) error {
+	var id string
+	err := json.Unmarshal(bs, &id)
+	if err != nil {
+		return err
+	}
+	*r = *dag.LoadDepAliasFromID(DepAliasID(id))
+	return nil
 }
 
 // A directory.
@@ -5244,6 +5316,15 @@ func (r *Client) DefaultPlatform(ctx context.Context) (Platform, error) {
 	return response, q.Execute(ctx, r.Client)
 }
 
+func (r *Client) DepAlias() *DepAlias {
+	q := r.Query.Select("depAlias")
+
+	return &DepAlias{
+		Query:  q,
+		Client: r.Client,
+	}
+}
+
 // DirectoryOpts contains options for Client.Directory
 type DirectoryOpts struct {
 	// DEPRECATED: Use `loadDirectoryFromID` isntead.
@@ -5394,6 +5475,17 @@ func (r *Client) LoadCurrentModuleFromID(id CurrentModuleID) *CurrentModule {
 	q = q.Arg("id", id)
 
 	return &CurrentModule{
+		Query:  q,
+		Client: r.Client,
+	}
+}
+
+// Load a DepAlias from its ID.
+func (r *Client) LoadDepAliasFromID(id DepAliasID) *DepAlias {
+	q := r.Query.Select("loadDepAliasFromID")
+	q = q.Arg("id", id)
+
+	return &DepAlias{
 		Query:  q,
 		Client: r.Client,
 	}
