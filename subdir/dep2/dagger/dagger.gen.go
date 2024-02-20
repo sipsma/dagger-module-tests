@@ -25,9 +25,6 @@ type ContainerID = dagger.ContainerID
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID = dagger.CurrentModuleID
 
-// The `Dep2ID` scalar type represents an identifier for an object of type Dep2.
-type Dep2ID = dagger.Dep2ID
-
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID = dagger.DirectoryID
 
@@ -210,8 +207,6 @@ type CurrentModule = dagger.CurrentModule
 
 // CurrentModuleWorkdirOpts contains options for CurrentModule.Workdir
 type CurrentModuleWorkdirOpts = dagger.CurrentModuleWorkdirOpts
-
-type Dep2 = dagger.Dep2
 
 // A directory.
 type Directory = dagger.Directory
@@ -503,7 +498,7 @@ func convertSlice[I any, O any](in []I, f func(I) O) []O {
 	return out
 }
 
-func (r *Dep) UnmarshalJSON(bs []byte) error {
+func (r *Dep2) UnmarshalJSON(bs []byte) error {
 	var concrete struct{}
 	err := json.Unmarshal(bs, &concrete)
 	if err != nil {
@@ -571,25 +566,61 @@ func main() {
 
 func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName string, inputArgs map[string][]byte) (_ any, err error) {
 	switch parentName {
-	case "Dep":
+	case "Dep2":
 		switch fnName {
-		case "Fn":
-			var parent Dep
+		case "ContainerEcho":
+			var parent Dep2
 			err = json.Unmarshal(parentJSON, &parent)
 			if err != nil {
 				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
 			}
-			return (*Dep).Fn(&parent, ctx)
+			var stringArg string
+			if inputArgs["stringArg"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["stringArg"]), &stringArg)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg stringArg", err))
+				}
+			}
+			return (*Dep2).ContainerEcho(&parent, stringArg), nil
+		case "GrepDir":
+			var parent Dep2
+			err = json.Unmarshal(parentJSON, &parent)
+			if err != nil {
+				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
+			}
+			var directoryArg *Directory
+			if inputArgs["directoryArg"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["directoryArg"]), &directoryArg)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg directoryArg", err))
+				}
+			}
+			var pattern string
+			if inputArgs["pattern"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["pattern"]), &pattern)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg pattern", err))
+				}
+			}
+			return (*Dep2).GrepDir(&parent, ctx, directoryArg, pattern)
 		default:
 			return nil, fmt.Errorf("unknown function %s", fnName)
 		}
 	case "":
 		return dag.Module().
 			WithObject(
-				dag.TypeDef().WithObject("Dep").
+				dag.TypeDef().WithObject("Dep2").
 					WithFunction(
-						dag.Function("Fn",
-							dag.TypeDef().WithKind(StringKind)))), nil
+						dag.Function("ContainerEcho",
+							dag.TypeDef().WithObject("Container")).
+							WithDescription("example usage: \"dagger call container-echo --string-arg yo stdout\"").
+							WithArg("stringArg", dag.TypeDef().WithKind(StringKind))).
+					WithFunction(
+						dag.Function("GrepDir",
+							dag.TypeDef().WithKind(StringKind)).
+							WithDescription("example usage: \"dagger call grep-dir --directory-arg . --pattern GrepDir\"").
+							WithArg("directoryArg", dag.TypeDef().WithObject("Directory")).
+							WithArg("pattern", dag.TypeDef().WithKind(StringKind)))), nil
 	default:
 		return nil, fmt.Errorf("unknown object %s", parentName)
 	}

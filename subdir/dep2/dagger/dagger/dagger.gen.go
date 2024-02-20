@@ -114,9 +114,6 @@ type ContainerID string
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID string
 
-// The `Dep2ID` scalar type represents an identifier for an object of type Dep2.
-type Dep2ID string
-
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID string
 
@@ -1831,75 +1828,6 @@ func (r *CurrentModule) WorkdirFile(path string) *File {
 		Query:  q,
 		Client: r.Client,
 	}
-}
-
-type Dep2 struct {
-	Query  *querybuilder.Selection
-	Client graphql.Client
-
-	fn *string
-	id *Dep2ID
-}
-
-func (r *Dep2) Fn(ctx context.Context) (string, error) {
-	if r.fn != nil {
-		return *r.fn, nil
-	}
-	q := r.Query.Select("fn")
-
-	var response string
-
-	q = q.Bind(&response)
-	return response, q.Execute(ctx, r.Client)
-}
-
-// A unique identifier for this Dep2.
-func (r *Dep2) ID(ctx context.Context) (Dep2ID, error) {
-	if r.id != nil {
-		return *r.id, nil
-	}
-	q := r.Query.Select("id")
-
-	var response Dep2ID
-
-	q = q.Bind(&response)
-	return response, q.Execute(ctx, r.Client)
-}
-
-// XXX_GraphQLType is an internal function. It returns the native GraphQL type name
-func (r *Dep2) XXX_GraphQLType() string {
-	return "Dep2"
-}
-
-// XXX_GraphQLIDType is an internal function. It returns the native GraphQL type name for the ID of this object
-func (r *Dep2) XXX_GraphQLIDType() string {
-	return "Dep2ID"
-}
-
-// XXX_GraphQLID is an internal function. It returns the underlying type ID
-func (r *Dep2) XXX_GraphQLID(ctx context.Context) (string, error) {
-	id, err := r.ID(ctx)
-	if err != nil {
-		return "", err
-	}
-	return string(id), nil
-}
-
-func (r *Dep2) MarshalJSON() ([]byte, error) {
-	id, err := r.ID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(id)
-}
-func (r *Dep2) UnmarshalJSON(bs []byte) error {
-	var id string
-	err := json.Unmarshal(bs, &id)
-	if err != nil {
-		return err
-	}
-	*r = *dag.LoadDep2FromID(Dep2ID(id))
-	return nil
 }
 
 // A directory.
@@ -5316,15 +5244,6 @@ func (r *Client) DefaultPlatform(ctx context.Context) (Platform, error) {
 	return response, q.Execute(ctx, r.Client)
 }
 
-func (r *Client) Dep2() *Dep2 {
-	q := r.Query.Select("dep2")
-
-	return &Dep2{
-		Query:  q,
-		Client: r.Client,
-	}
-}
-
 // DirectoryOpts contains options for Client.Directory
 type DirectoryOpts struct {
 	// DEPRECATED: Use `loadDirectoryFromID` isntead.
@@ -5475,17 +5394,6 @@ func (r *Client) LoadCurrentModuleFromID(id CurrentModuleID) *CurrentModule {
 	q = q.Arg("id", id)
 
 	return &CurrentModule{
-		Query:  q,
-		Client: r.Client,
-	}
-}
-
-// Load a Dep2 from its ID.
-func (r *Client) LoadDep2FromID(id Dep2ID) *Dep2 {
-	q := r.Query.Select("loadDep2FromID")
-	q = q.Arg("id", id)
-
-	return &Dep2{
 		Query:  q,
 		Client: r.Client,
 	}
